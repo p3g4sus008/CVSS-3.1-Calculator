@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CVSS Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .calculator {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+    }
+    .result {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #333;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="calculator">
+  <h2>CVSS Score Calculator</h2>
+
+  <!-- Input fields for each parameter -->
+  <div class="question">
+    <label>How accessible is the vulnerability to an attacker? (Attack Vector)</label>
+    <select id="attackVector">
+      <option value="0.85" data-vector="N">Network (Accessible over the internet or external network)</option>
+      <option value="0.62" data-vector="A">Adjacent Network (Only accessible over local network)</option>
+      <option value="0.55" data-vector="L">Local (Requires access to the local device)</option>
+      <option value="0.20" data-vector="P">Physical (Requires physical access to the device)</option>
+    </select>
+  </div>
+
+  <div class="question">
+    <label>How complex is it to exploit this vulnerability? (Attack Complexity)</label>
+    <select id="attackComplexity">
+      <option value="0.77" data-vector="L">Low (No special conditions or configurations needed)</option>
+      <option value="0.44" data-vector="H">High (Requires specific conditions to be met)</option>
+    </select>
+  </div>
+
+  <div class="question">
+    <label>What level of privileges does an attacker need to exploit this vulnerability? (Privileges Required)</label>
+    <select id="privilegesRequired">
+      <option value="0.85" data-vector="N">None (No privileges needed)</option>
+      <option value="0.62" data-vector="L">Low (Basic user privileges)</option>
+      <option value="0.27" data-vector="H">High (Administrative or high-level privileges)</option>
+    </select>
+  </div>
+
+  <div class="question">
+    <label>Does the exploit require user interaction? (User Interaction)</label>
+    <select id="userInteraction">
+      <option value="0.85" data-vector="N">None (No user interaction required)</option>
+      <option value="0.62" data-vector="R">Required (User interaction required)</option>
+    </select>
+  </div>
+
+  <div class="question">
+    <label>Does exploiting the vulnerability affect other systems beyond the vulnerable component? (Scope)</label>
+    <select id="scope">
+      <option value="U" data-vector="U">Unchanged (Only affects the vulnerable system)</option>
+      <option value="C" data-vector="C">Changed (Affects other systems beyond the vulnerable component)</option>
+    </select>
+  </div>
+
+  <div class="question">
+    <label>Does this vulnerability expose sensitive data? (Confidentiality Impact)</label>
+    <select id="confidentialityImpact">
+      <option value="0" data-vector="N">None (No data exposure)</option>
+      <option value="0.22" data-vector="L">Low (Some data exposure)</option>
+      <option value="0.56" data-vector="H">High (Significant data exposure)</option>
+    </select>
+  </div>
+
+  <div class="question">
+    <label>Can this vulnerability alter or damage data? (Integrity Impact)</label>
+    <select id="integrityImpact">
+      <option value="0" data-vector="N">None (No data alteration)</option>
+      <option value="0.22" data-vector="L">Low (Some data alteration)</option>
+      <option value="0.56" data-vector="H">High (Significant data alteration)</option>
+    </select>
+  </div>
+
+  <div class="question">
+    <label>Does this vulnerability affect system uptime or availability? (Availability Impact)</label>
+    <select id="availabilityImpact">
+      <option value="0" data-vector="N">None (No impact on uptime)</option>
+      <option value="0.22" data-vector="L">Low (Minor impact on uptime)</option>
+      <option value="0.56" data-vector="H">High (Major impact on uptime)</option>
+    </select>
+  </div>
+
+  <button onclick="calculateCVSS()">Calculate CVSS Score and Vector</button>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+  function calculateCVSS() {
+    // Retrieve values and vectors from the selected options
+    const AV = parseFloat(document.getElementById("attackVector").value);
+    const AC = parseFloat(document.getElementById("attackComplexity").value);
+    const PR = parseFloat(document.getElementById("privilegesRequired").value);
+    const UI = parseFloat(document.getElementById("userInteraction").value);
+    const S = document.getElementById("scope").value;
+    const C = parseFloat(document.getElementById("confidentialityImpact").value);
+    const I = parseFloat(document.getElementById("integrityImpact").value);
+    const A = parseFloat(document.getElementById("availabilityImpact").value);
+
+    const AVVector = document.getElementById("attackVector").selectedOptions[0].getAttribute("data-vector");
+    const ACVector = document.getElementById("attackComplexity").selectedOptions[0].getAttribute("data-vector");
+    const PRVector = document.getElementById("privilegesRequired").selectedOptions[0].getAttribute("data-vector");
+    const UIVector = document.getElementById("userInteraction").selectedOptions[0].getAttribute("data-vector");
+    const SVector = document.getElementById("scope").selectedOptions[0].getAttribute("data-vector");
+    const CVector = document.getElementById("confidentialityImpact").selectedOptions[0].getAttribute("data-vector");
+    const IVector = document.getElementById("integrityImpact").selectedOptions[0].getAttribute("data-vector");
+    const AVector = document.getElementById("availabilityImpact").selectedOptions[0].getAttribute("data-vector");
+
+    // Calculate ISC Base (Impact Sub Score)
+    const ISCBase = 1 - ((1 - C) * (1 - I) * (1 - A));
+    let impact;
+    if (S === "U") {
+      impact = 6.42 * ISCBase;
+    } else {
+      impact = 7.52 * (ISCBase - 0.029) - 3.25 * Math.pow((ISCBase - 0.02), 15);
+    }
+
+    // Calculate Exploitability Sub Score
+    const exploitability = 8.22 * AV * AC * PR * UI;
+
+    // Calculate Base Score
+    let baseScore;
+    if (impact <= 0) {
+      baseScore = 0;
+    } else if (S === "U") {
+      baseScore = Math.ceil(Math.min((impact + exploitability), 10) * 10) / 10;
+    } else {
+      baseScore = Math.ceil(Math.min(1.08 * (impact + exploitability), 10) * 10) / 10;
+    }
+
+    // Construct the CVSS Vector string
+    const vector = `CVSS:3.1/AV:${AVVector}/AC:${ACVector}/PR:${PRVector}/UI:${UIVector}/S:${SVector}/C:${CVector}/I:${IVector}/A:${AVector}`;
+
+    // Display the result
+    document.getElementById("result").innerHTML = `Base Score: ${baseScore}<br>Vector: ${vector}`;
+  }
+</script>
+
+</body>
+</html>
